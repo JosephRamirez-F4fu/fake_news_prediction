@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from resources.model import model, vectorizer
+from resources.model import model, vectorizer,preprocess_text
 import numpy as np
 
 
@@ -12,6 +12,7 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     news = request.form['news']
+    news = preprocess_text(news)
     news_vector = vectorizer.transform([news])
     prediction = model.predict(news_vector)[0]
     print(prediction)
