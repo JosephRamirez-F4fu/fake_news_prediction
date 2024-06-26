@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Prediction</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #2C2289, #517BC1, #56C1D4, #A2E4F2, #E9EEF2);
+            transition: background-color 0.3s, color 0.3s;
+            z-index: 1;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #0d0d0d, #1f1f1f, #2a2a2a);
+            color: #ffffff;
+        }
+
+        body.light-mode {
+            background: linear-gradient(135deg, #2C2289, #517BC1, #56C1D4, #A2E4F2, #E9EEF2);
+            color: #ffffff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            color: #ffffff;
+        }
+
+        h1 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+            background-color: #1f1f1f;
+            color: #fff;
+        }
+
+        textarea:focus {
+            transform: scale(1.02);
+            outline: none;
+        }
+
+        button {
+            background-color: #3b3b98;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #8876d6;
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Estilo para el scroll bar */
+        #probabilityBar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 25px;
+            overflow: hidden;
+            margin: 1rem 0;
+            height: 30px;
+            /* Altura del scroll bar */
+        }
+
+        #probabilityFill {
+            height: 100%;
+            background-color: #6d4be6e5;
+            transition: none;
+            /* Quita la transición para usar una animación CSS */
+            animation: fillAnimation 2s ease-in-out forwards;
+            /* Definición de la animación */
+        }
+
+        @keyframes fillAnimation {
+            from {
+                width: 0%;
+                /* Ancho inicial */
+            }
+
+            to {
+                width: var(--probability);
+                /* Ancho final basado en una variable CSS */
+            }
+        }
+
+
+
+        /* Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-bottom: 1rem;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #00c6ff;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Estilos para el confeti */
+        #confetti {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+        }
+
+        .confetti {
+            width: 10px;
+            height: 10px;
+            background-color: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Estilos para la lluvia */
+        #rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+        }
+
+        .raindrop {
+            width: 2px;
+            height: 10px;
+            background-color: #00f;
+            position: absolute;
+            animation: rain-fall 2s linear forwards;
+        }
+
+        @keyframes rain-fall {
+            0% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        /* Ocultar elementos */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body class="light-mode">
+    <div class="container">
+        <h1>¡Comprueba si la noticia es real o falsa!</h1>
+        <label class="switch">
+            <input type="checkbox" id="modeToggle">
+            <span class="slider round"></span>
+        </label>
+        <textarea id="newsInput" placeholder="Enter the news here..."></textarea>
+        <button id="predictButton">Prediccion</button>
+        <div id="result" class="hidden">
+            <p id="prediction"></p>
+            <div id="probabilityBar">
+                <div id="probabilityFill"></div>
+            </div>
+            <p id="probabilityText"></p>
+            <p>Danos tu opinión si lo predijimos mal :)</p>
+            <button id="feedbackReal">Real</button>
+            <button id="feedbackFake">Fake</button>
+
+            <!-- Confeti -->
+            <div id="confetti" class="hidden">
+                <!-- Genera múltiples confetis -->
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+                <div class="confetti"></div>
+            </div>
+
+            <!-- Lluvia -->
+            <div id="rain" class="hidden">
+                <!-- Genera múltiples gotas de lluvia -->
+                <div class="raindrop"></div>
+                <div class="raindrop"></div>
+                <div class="raindrop"></div>
+                <div class="raindrop"></div>
+                <div class="raindrop"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('predictButton').addEventListener('click', function () {
+            const news = document.getElementById('newsInput').value;
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'news=' + encodeURIComponent(news),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').classList.remove('hidden');
+                    document.getElementById('prediction').textContent = data.prediction;
+
+                    // Asignar la probabilidad como una variable CSS
+                    const probabilityFill = document.getElementById('probabilityFill');
+                    probabilityFill.style.setProperty('--probability', data.probability + '%');
+
+                    // Añadir una pequeña demora antes de aplicar la animación para que sea visible
+                    setTimeout(() => {
+                        probabilityFill.style.transition = 'width 2s ease-in-out'; // Volver a aplicar la transición
+                        probabilityFill.style.width = data.probability + '%';
+                        document.getElementById('probabilityText').textContent = 'The news is ' + data.probability + '% real';
+                    }, 100); // Demora de 100ms para permitir que se aplique la transición
+                });
+
+
+        });
+
+        document.getElementById('modeToggle').addEventListener('change', function () {
+            if (this.checked) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            }
+        });
+        document.getElementById('feedbackReal').addEventListener('click', function () {
+            document.getElementById('confetti').classList.remove('hidden');
+            document.getElementById('rain').classList.add('hidden');
+            const confettiContainer = document.getElementById('confetti');
+            confettiContainer.innerHTML = ''; 
+
+            const numConfettis = 20; 
+
+            for (let i = 0; i < numConfettis; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}%`; 
+                confetti.style.top = `${Math.random() * 100}%`; 
+                confetti.style.animationDelay = `${Math.random()}s`; 
+
+                confettiContainer.appendChild(confetti); 
+            }
+            setTimeout(() => {
+                document.getElementById('confetti').classList.add('hidden');
+            }, 3000); 
+        });
+
+        document.getElementById('feedbackFake').addEventListener('click', function () {
+            document.getElementById('rain').classList.remove('hidden');
+            document.getElementById('confetti').classList.add('hidden');
+            const rainContainer = document.getElementById('rain');
+            rainContainer.innerHTML = ''; 
+
+            const numRaindrops = 30; 
+
+            for (let i = 0; i < numRaindrops; i++) {
+                const raindrop = document.createElement('div');
+                raindrop.className = 'raindrop';
+                raindrop.style.left = `${Math.random() * 100}%`; 
+                raindrop.style.top = `${Math.random() * 100}%`; 
+                raindrop.style.animationDelay = `${Math.random()}s`; 
+
+                rainContainer.appendChild(raindrop); 
+            }
+
+            // Ocultar la lluvia después de la animación
+            setTimeout(() => {
+                document.getElementById('rain').classList.add('hidden');
+            }, 2000); // Tiempo de duración de la animación de lluvia (2 segundos)
+        });
+
+
+    </script>
+</body>
+
+</html>
